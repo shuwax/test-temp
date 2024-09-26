@@ -1,0 +1,33 @@
+{
+  "name": "api-testing",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run format && npm run build && node dist/index.js",
+    "test": "jest",
+    "dev": "ts-node-dev src/e2e-setup.ts",
+    "format": "prettier --write .",
+    "lint": "eslint . ",
+    "lint:fix": "eslint . --fix "
+  },
+  "dependencies": {
+    "axios": "^1.5.0",
+    "esbuild": "^0.24.0",
+    "js-cookie": "^3.0.5",
+    "openapi-fetch": "^0.12.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.11.1",
+    "@types/node": "^20.16.5",
+    "eslint": "^9.11.1",
+    "globals": "^15.9.0",
+    "openapi-typescript": "^7.4.1",
+    "prettier": "^3.3.3",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.7.0"
+  }
+}
