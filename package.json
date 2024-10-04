@@ -1,8 +1,9 @@
 {
   "name": "@r-smolonskij/api-testing",
   "version": "1.0.2",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./src/index",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/shuwax/api-testing.git"
