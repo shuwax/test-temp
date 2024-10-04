@@ -1,14 +1,4 @@
-import { Client } from 'openapi-fetch';
-import { paths } from '../schemas.js';
-import { ClientType } from './enums.js';
-
-export interface ApiServiceObject {
-  openApiClient?: Client<paths, `${string}/${string}`>;
-  baseUrl?: string;
-  csrfToken?: string;
-  cookies?: string[];
-  clientType?: ClientType;
-}
+import { paths } from '../schemas.ts';
 
 export interface RequestOptions {
   body?: unknown;

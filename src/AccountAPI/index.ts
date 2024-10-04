@@ -1,7 +1,11 @@
-import axios from 'axios';
 import { ApiService } from '../ApiService/index.js';
-import { components, paths } from '../schemas.js';
-import { DataModel, PathParameters } from '../types.js';
+import { DataModel, PathParameters, QueryParameters } from '../types.js';
+import {
+  LoginAdminByEmailAndPasswordModel,
+  LoginByEmailAndPasswordModel,
+  LogoutQuery,
+  TwoFactorViewModel,
+} from './types.js';
 export class AccountAPI {
   private apiService: ApiService;
   constructor(apiService: ApiService) {
@@ -18,65 +22,39 @@ export class AccountAPI {
 
   getAntiForgeryToken = async () => {
     try {
-      const { data, response } = await this.apiService.makeRequest<
-        DataModel<'RequestVerificationTokenViewModel'>
-      >({
-        method: 'GET',
-        path: '/api/Account/AntiForgeryToken',
-      });
+      const { data, response } = await this.apiService
+        .getOpenApiClient()
+        .GET('/api/Account/AntiForgeryToken');
 
       const token = data.requestVerificationToken;
-      const cookies = response.headers.get('set-cookie');
-      this.apiService.setCSRFToken(token);
-      this.apiService.setCookies([cookies]);
+      const cookie = response.headers.get('set-cookie');
 
-      // const apiServiceObject = this.apiService.getApiServiceObject();
-      // const response = await axios.get(
-      //   `${apiServiceObject.baseUrl}/api/Account/AntiForgeryToken`,
-      //   {
-      //     withCredentials: true, // Ensure cookies are sent and received
-      //   }
-      // );
+      if (!this.apiService.getCookies()?.length) {
+        if (cookie) this.apiService.setCookies([cookie]);
+      }
 
-      // const token = response.data.requestVerificationToken;
+      if (token) this.apiService.setCSRFToken(token);
 
-      // const cookies = response.headers['set-cookie'];
-      // this.apiService.setCSRFToken(token);
-      // this.apiService.setCookies(cookies);
+      return { token, cookie };
     } catch (error) {
       console.error('Error fetching AntiForgeryToken:', error);
       return error;
     }
   };
 
-  login = async (
-    body: DataModel<'LoginBindingModel'>
+  loginByEmailAndPassword = async (
+    body: LoginByEmailAndPasswordModel
   ): Promise<DataModel<'UserInfoViewModel'>> => {
     try {
-      // const openApiClient = this.apiService.getOpenApiClient();
-      // const { data, error, response } = await openApiClient.POST(
-      //   '/api/Account/Login',
-      //   {
-      //     body,
-      //     headers: this.apiService.getRequestHeaders(),
-      //   }
-      // );
-
-      // if (error) {
-      //   throw error;
-      // }
-
-      const { data, response } = await this.apiService.makeRequest<
-        DataModel<'UserInfoViewModel'>
-      >({
-        method: 'POST',
-        path: '/api/Account/Login',
-        options: { body },
-      });
+      const { data, response } = await this.apiService
+        .getOpenApiClient()
+        .POST('/api/Account/Login', { body });
 
       const cookies = response.headers.get('set-cookie');
       this.apiService.setCookies([...this.apiService.getCookies(), cookies]);
+      await this.getAntiForgeryToken();
 
+      console.log('Logged in');
       return data;
     } catch (error) {
       console.error('Error logging in:', error);
@@ -84,13 +62,57 @@ export class AccountAPI {
     }
   };
 
-  logout = async (query?: PathParameters<'/api/Account/Logout', 'post'>) => {
+  loginAdminByEmailAndPassword = async (
+    body: LoginAdminByEmailAndPasswordModel
+  ): Promise<DataModel<'UserInfoViewModel'>> => {
     try {
-      await this.apiService.makeRequest({
-        method: 'POST',
-        path: '/api/Account/Logout',
-        options: { params: { query } },
+      const bodyData = { ...body };
+      if (!bodyData.language) bodyData.language = 'en';
+
+      const { data, response } = await this.apiService
+        .getOpenApiClient()
+        .POST('/api/Account/LoginAdmin', { body: bodyData });
+
+      const dataObject = data as TwoFactorViewModel;
+      const code = dataObject?.code;
+
+      if (code) {
+        return this.loginAdminByEmailAndPassword({ ...body, code });
+      }
+
+      const cookies = response.headers.get('set-cookie');
+      this.apiService.setCookies([...this.apiService.getCookies(), cookies]);
+      await this.getAntiForgeryToken();
+
+      console.log('Logged in');
+      return data;
+    } catch (error) {
+      console.error('Error admin logging in:', error);
+      return error;
+    }
+  };
+
+  getUserInfo = async (): Promise<DataModel<'UserInfoViewModel'>> => {
+    try {
+      const { data } = await this.apiService
+        .getOpenApiClient()
+        .GET('/api/Account/Info');
+
+      return data;
+    } catch (error) {
+      console.error('Error getting user info:', error);
+      return error;
+    }
+  };
+
+  logout = async (query?: LogoutQuery) => {
+    try {
+      await this.apiService.getOpenApiClient().POST('/api/Account/Logout', {
+        params: { query },
       });
+
+      this.apiService.setCookies([]);
+      await this.getAntiForgeryToken();
 
       console.log('Logout successful');
     } catch (error) {

@@ -8,10 +8,9 @@ export class LocationsAPI {
         };
         this.getLocations = async () => {
             try {
-                const { data } = await this.apiService.makeRequest({
-                    method: 'GET',
-                    path: '/api/Locations',
-                });
+                const { data } = await this.apiService
+                    .getOpenApiClient()
+                    .GET('/api/Locations');
                 return data;
             }
             catch (error) {
@@ -19,15 +18,11 @@ export class LocationsAPI {
                 return error;
             }
         };
-        this.getLocationById = async (params) => {
+        this.getLocationById = async (id) => {
             try {
-                const { data } = await this.apiService.makeRequest({
-                    method: 'GET',
-                    path: '/api/Locations/{id}',
-                    options: {
-                        params: { path: params },
-                    },
-                });
+                const { data } = await this.apiService
+                    .getOpenApiClient()
+                    .GET('/api/Locations/{id}', { params: { path: { id } } });
                 return data;
             }
             catch (error) {
@@ -37,13 +32,9 @@ export class LocationsAPI {
         };
         this.createLocation = async (body) => {
             try {
-                const { data } = await this.apiService.makeRequest({
-                    method: 'POST',
-                    path: '/api/Locations',
-                    options: {
-                        body,
-                    },
-                });
+                const { data } = await this.apiService
+                    .getOpenApiClient()
+                    .POST('/api/Locations', { body });
                 return data;
             }
             catch (error) {

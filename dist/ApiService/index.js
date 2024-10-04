@@ -1,5 +1,9 @@
-import createClient from 'openapi-fetch';
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+import createOpenAPIClient from 'openapi-fetch';
 import { ClientType } from './enums.js';
+import * as qs from 'qs';
+import { createError, getRequestHeaders } from './helpers.js';
+const emptyResponseStatuses = [200, 204];
 export class ApiService {
     constructor(baseUrl, clientType = ClientType.Web) {
         this.openApiClient = undefined;
@@ -7,7 +11,7 @@ export class ApiService {
         this.cookies = undefined;
         this.baseUrl = baseUrl;
         this.clientType = clientType;
-        this.openApiClient = createClient({ baseUrl });
+        this.openApiClient = this.createClient({ baseUrl });
     }
     async makeRequest({ method, path, options, }) {
         try {
@@ -19,16 +23,13 @@ export class ApiService {
                 ...requestOptions,
             });
             const { data, response, error } = res;
-            if (path === '/api/Account/Logout') {
-                console.log(requestOptions);
-            }
             if (error) {
                 throw error;
             }
             return { data, response };
         }
         catch (error) {
-            console.log(error);
+            console.error(error);
             throw error;
         }
     }
@@ -47,15 +48,6 @@ export class ApiService {
     getClientType() {
         return this.clientType;
     }
-    getApiServiceObject() {
-        return {
-            openApiClient: this.openApiClient,
-            baseUrl: this.baseUrl,
-            csrfToken: this.csrfToken,
-            cookies: this.cookies,
-            clientType: this.clientType,
-        };
-    }
     getRequestHeaders(includeCsrfToken = true, includeCookies = true) {
         return {
             ...(includeCsrfToken &&
@@ -66,9 +58,59 @@ export class ApiService {
             }),
         };
     }
+    createClient(clientOptions) {
+        const options = {
+            querySerializer: (query) => {
+                return qs.stringify(query, { arrayFormat: 'repeat' });
+            },
+        };
+        const client = createOpenAPIClient({
+            ...options,
+            ...clientOptions,
+        });
+        const csrfToken = () => this.csrfToken;
+        const cookies = () => this.cookies;
+        function addAuthorizationHeader(options) {
+            const updatedHeaders = options?.headers ?? getRequestHeaders(csrfToken(), cookies());
+            return {
+                ...options,
+                headers: updatedHeaders,
+            };
+        }
+        return {
+            async GET(url, init) {
+                const { data, error, response } = await client.GET(url, addAuthorizationHeader(init));
+                if (data || emptyResponseStatuses.includes(response?.status)) {
+                    return { data, response };
+                }
+                throw createError(error, response);
+            },
+            async PUT(url, init) {
+                const { data, error, response } = await client.PUT(url, addAuthorizationHeader(init));
+                if (data || emptyResponseStatuses.includes(response?.status)) {
+                    return { data, response };
+                }
+                throw createError(error, response);
+            },
+            async POST(url, init) {
+                const { data, error, response } = await client.POST(url, addAuthorizationHeader(init));
+                if (data || emptyResponseStatuses.includes(response?.status)) {
+                    return { data, response };
+                }
+                throw createError(error, response);
+            },
+            async DELETE(url, init) {
+                const { data, error, response } = await client.DELETE(url, addAuthorizationHeader(init));
+                if (data || emptyResponseStatuses.includes(response?.status)) {
+                    return { data, response };
+                }
+                throw createError(error, response);
+            },
+        };
+    }
     setBaseUrl(baseUrl) {
         this.baseUrl = baseUrl;
-        this.openApiClient = createClient({ baseUrl });
+        this.openApiClient = this.createClient({ baseUrl });
     }
     setCSRFToken(csrfToken) {
         this.csrfToken = csrfToken;

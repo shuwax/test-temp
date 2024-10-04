@@ -1,5 +1,6 @@
 import { ApiService } from '../ApiService/index.js';
 import { DataModel, PathParameters } from '../types.js';
+import { CreateLocationModel } from './types.js';
 
 export class LocationsAPI {
   private apiService: ApiService;
@@ -18,12 +19,10 @@ export class LocationsAPI {
 
   getLocations = async () => {
     try {
-      const { data } = await this.apiService.makeRequest<
-        DataModel<'LocationViewModel'>
-      >({
-        method: 'GET',
-        path: '/api/Locations',
-      });
+      const { data } = await this.apiService
+        .getOpenApiClient()
+        .GET('/api/Locations');
+
       return data;
     } catch (error) {
       console.error('Error fetching locations:', error);
@@ -32,18 +31,12 @@ export class LocationsAPI {
   };
 
   getLocationById = async (
-    params: PathParameters<'/api/Locations/{id}', 'get'>
-  ) => {
+    id: number
+  ): Promise<DataModel<'LocationViewModel'>> => {
     try {
-      const { data } = await this.apiService.makeRequest<
-        DataModel<'LocationViewModel'>
-      >({
-        method: 'GET',
-        path: '/api/Locations/{id}',
-        options: {
-          params: { path: params },
-        },
-      });
+      const { data } = await this.apiService
+        .getOpenApiClient()
+        .GET('/api/Locations/{id}', { params: { path: { id } } });
 
       return data;
     } catch (error) {
@@ -52,17 +45,13 @@ export class LocationsAPI {
     }
   };
 
-  createLocation = async (body: DataModel<'CreateLocationBindingModel'>) => {
+  createLocation = async (
+    body: CreateLocationModel
+  ): Promise<DataModel<'LocationViewModel'>> => {
     try {
-      const { data } = await this.apiService.makeRequest<
-        DataModel<'LocationViewModel'>
-      >({
-        method: 'POST',
-        path: '/api/Locations',
-        options: {
-          body,
-        },
-      });
+      const { data } = await this.apiService
+        .getOpenApiClient()
+        .POST('/api/Locations', { body });
 
       return data;
     } catch (error) {

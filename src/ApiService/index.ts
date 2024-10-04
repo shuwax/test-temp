@@ -1,17 +1,21 @@
-import createClient, { Client } from 'openapi-fetch';
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+import createOpenAPIClient, { FetchOptions } from 'openapi-fetch';
 import { ClientType } from './enums.js';
 import { paths } from '../schemas.js';
+import { RequestObject, RequestOptions, RequestResult } from './types.js';
+import * as qs from 'qs';
 import {
-  ApiServiceObject,
-  RequestObject,
-  RequestOptions,
-  RequestResult,
-} from './types.js';
+  FilterKeys,
+  HttpMethod,
+  PathsWithMethod,
+} from 'openapi-typescript-helpers';
+import { createError, getRequestHeaders } from './helpers.js';
 
+const emptyResponseStatuses = [200, 204];
 export class ApiService {
-  private openApiClient: Client<paths, `${string}/${string}`> | undefined =
-    undefined;
-
+  private openApiClient:
+    | ReturnType<typeof this.createClient<paths>>
+    | undefined = undefined;
   private baseUrl: string;
   private csrfToken: string | undefined = undefined;
   private cookies: string[] | undefined = undefined;
@@ -20,7 +24,7 @@ export class ApiService {
   constructor(baseUrl: string, clientType: ClientType = ClientType.Web) {
     this.baseUrl = baseUrl;
     this.clientType = clientType;
-    this.openApiClient = createClient<paths>({ baseUrl });
+    this.openApiClient = this.createClient<paths>({ baseUrl });
   }
 
   async makeRequest<T>({
@@ -40,22 +44,18 @@ export class ApiService {
 
       const { data, response, error } = res;
 
-      if (path === '/api/Account/Logout') {
-        console.log(requestOptions);
-      }
-
       if (error) {
         throw error;
       }
 
       return { data, response };
     } catch (error) {
-      console.log(error);
+      console.error(error);
       throw error;
     }
   }
 
-  getOpenApiClient(): Client<paths, `${string}/${string}`> {
+  getOpenApiClient(): ReturnType<typeof this.createClient<paths>> {
     return this.openApiClient;
   }
 
@@ -75,16 +75,6 @@ export class ApiService {
     return this.clientType;
   }
 
-  getApiServiceObject(): ApiServiceObject {
-    return {
-      openApiClient: this.openApiClient,
-      baseUrl: this.baseUrl,
-      csrfToken: this.csrfToken,
-      cookies: this.cookies,
-      clientType: this.clientType,
-    };
-  }
-
   getRequestHeaders(includeCsrfToken = true, includeCookies = true) {
     return {
       ...(includeCsrfToken &&
@@ -96,9 +86,102 @@ export class ApiService {
     };
   }
 
+  createClient<Paths extends {}>(
+    clientOptions: Parameters<typeof createOpenAPIClient>[0]
+  ) {
+    const options = {
+      querySerializer: (query: unknown) => {
+        return qs.stringify(query, { arrayFormat: 'repeat' });
+      },
+    };
+
+    const client = createOpenAPIClient<Paths>({
+      ...options,
+      ...clientOptions,
+    });
+    const csrfToken = () => this.csrfToken;
+    const cookies = () => this.cookies;
+    function addAuthorizationHeader<
+      P extends PathsWithMethod<Paths, M>,
+      M extends HttpMethod,
+    >(options?: FetchOptions<FilterKeys<Paths[P], M>>) {
+      const updatedHeaders =
+        options?.headers ?? getRequestHeaders(csrfToken(), cookies());
+      return {
+        ...options,
+        headers: updatedHeaders,
+      };
+    }
+
+    return {
+      async GET<P extends PathsWithMethod<Paths, 'get'>>(
+        url: P,
+        init?: FetchOptions<FilterKeys<Paths[P], 'get'>>
+      ) {
+        const { data, error, response } = await client.GET(
+          url,
+          addAuthorizationHeader(init)
+        );
+
+        if (data || emptyResponseStatuses.includes(response?.status)) {
+          return { data, response };
+        }
+
+        throw createError(error, response);
+      },
+
+      async PUT<P extends PathsWithMethod<Paths, 'put'>>(
+        url: P,
+        init?: FetchOptions<FilterKeys<Paths[P], 'put'>>
+      ) {
+        const { data, error, response } = await client.PUT(
+          url,
+          addAuthorizationHeader(init)
+        );
+
+        if (data || emptyResponseStatuses.includes(response?.status)) {
+          return { data, response };
+        }
+
+        throw createError(error, response);
+      },
+
+      async POST<P extends PathsWithMethod<Paths, 'post'>>(
+        url: P,
+        init?: FetchOptions<FilterKeys<Paths[P], 'post'>>
+      ) {
+        const { data, error, response } = await client.POST(
+          url,
+          addAuthorizationHeader(init)
+        );
+        if (data || emptyResponseStatuses.includes(response?.status)) {
+          return { data, response };
+        }
+
+        throw createError(error, response);
+      },
+
+      async DELETE<P extends PathsWithMethod<Paths, 'delete'>>(
+        url: P,
+        init?: FetchOptions<FilterKeys<Paths[P], 'delete'>>
+      ) {
+        const { data, error, response } = await client.DELETE(
+          url,
+          addAuthorizationHeader(init)
+        );
+
+        if (data || emptyResponseStatuses.includes(response?.status)) {
+          return { data, response };
+        }
+
+        throw createError(error, response);
+      },
+    };
+  }
+
   setBaseUrl(baseUrl: string) {
     this.baseUrl = baseUrl;
-    this.openApiClient = createClient<paths>({ baseUrl });
+    this.openApiClient = this.createClient<paths>({ baseUrl });
   }
 
   setCSRFToken(csrfToken: string | undefined) {

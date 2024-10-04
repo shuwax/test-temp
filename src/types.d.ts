@@ -1,4 +1,4 @@
-import { components, paths } from './schemas.js';
+import { components, paths } from './schemas.ts';
 
 export type DataModel<T> = components['schemas'][T &
   keyof components['schemas']];
@@ -7,13 +7,6 @@ export type PathModel<T, U> = paths[T & keyof paths][U &
   keyof paths[T & keyof paths]];
 export type BodyModel<T, U> = paths[T & keyof paths][U &
   keyof paths[T & keyof paths]];
-
-type ParameterKeys<
-  Path extends keyof paths,
-  Method extends keyof paths[Path],
-> = paths[Path][Method] extends { parameters: object }
-  ? keyof paths[Path][Method]['parameters']
-  : never;
 
 // Generic utility type to extract a specific parameter type from an endpoint
 export type ParametersOfType<
