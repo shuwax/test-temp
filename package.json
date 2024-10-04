@@ -1,6 +1,8 @@
 {
   "name": "@r-smolonskij/api-testing",
   "version": "1.0.2",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "repository": "https://github.com/shuwax/api-testing",
   "scripts": {
     "build": "tsc",
