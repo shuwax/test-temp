@@ -1,11 +1,7 @@
-var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __defProps = Object.defineProperties;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
-var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getOwnPropSymbols = Object.getOwnPropertySymbols;
-var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __propIsEnum = Object.prototype.propertyIsEnumerable;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
@@ -21,27 +17,6 @@ var __spreadValues = (a, b) => {
   return a;
 };
 var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var __async = (__this, __arguments, generator) => {
   return new Promise((resolve, reject) => {
     var fulfilled = (value) => {
@@ -63,22 +38,9 @@ var __async = (__this, __arguments, generator) => {
   });
 };
 
-// src/index.ts
-var src_exports = {};
-__export(src_exports, {
-  AccountAPI: () => AccountAPI,
-  AlarmsAPI: () => AlarmsAPI,
-  ApiService: () => ApiService,
-  GroupsAPI: () => GroupsAPI,
-  LocationsAPI: () => LocationsAPI,
-  OrganizationsAPI: () => OrganizationsAPI,
-  UsersAPI: () => UsersAPI
-});
-module.exports = __toCommonJS(src_exports);
-
 // src/ApiService/index.ts
-var import_openapi_fetch = __toESM(require("openapi-fetch"));
-var qs = __toESM(require("qs"));
+import createOpenAPIClient from "openapi-fetch";
+import * as qs from "qs";
 
 // src/ApiService/helpers.ts
 var createError = (error, response) => {
@@ -152,7 +114,7 @@ var ApiService = class {
         return qs.stringify(query, { arrayFormat: "repeat" });
       }
     };
-    const client = (0, import_openapi_fetch.default)(__spreadValues(__spreadValues({}, options), clientOptions));
+    const client = createOpenAPIClient(__spreadValues(__spreadValues({}, options), clientOptions));
     const csrfToken = () => this.csrfToken;
     const cookies = () => this.cookies;
     function addAuthorizationHeader(options2) {
@@ -739,8 +701,7 @@ var OrganizationsAPI = class {
     this.apiService = apiService;
   }
 };
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
+export {
   AccountAPI,
   AlarmsAPI,
   ApiService,
@@ -748,4 +709,4 @@ var OrganizationsAPI = class {
   LocationsAPI,
   OrganizationsAPI,
   UsersAPI
-});
+};

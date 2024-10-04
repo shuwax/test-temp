@@ -1,3 +1,6 @@
+import { AccountAPI } from './AccountAPI/index.js';
+import { ApiService } from './ApiService/index.js';
+
 export { ApiService } from './ApiService/index.js';
 export { AccountAPI } from './AccountAPI/index.js';
 export { GroupsAPI } from './GroupsAPI/index.js';
